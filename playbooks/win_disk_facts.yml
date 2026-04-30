@@ -1,6 +1,6 @@
 ---
 - name: Windows disk and volume facts
-  hosts: all
+  hosts: l2-windows
   gather_facts: true
   tasks:
     - name: Disk layout summary
@@ -11,7 +11,7 @@
     - name: Fallback disk query (when facts omit disk structures)
       ansible.windows.win_shell: |
         Get-Disk | Select-Object Number, FriendlyName, Size, OperationalStatus, PartitionStyle |
-          ConvertTo-Json -Compress
+        ConvertTo-Json -Compress
       register: disk_json
       changed_when: false
 

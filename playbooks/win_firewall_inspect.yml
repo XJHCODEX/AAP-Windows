@@ -1,6 +1,6 @@
 ---
 - name: Inspect Windows Firewall rules (read-only)
-  hosts: all
+  hosts: l2-windows
   gather_facts: false
   tasks:
     - name: Sample firewall rules

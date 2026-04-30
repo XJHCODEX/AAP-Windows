@@ -1,6 +1,6 @@
 ---
 - name: Gather Windows facts
-  hosts: all
+  hosts: l2-windows
   gather_facts: true
   tasks:
     - name: Show key OS facts

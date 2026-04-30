@@ -1,12 +1,9 @@
 ---
 - name: Optional Windows features (optional components)
-  hosts: all
+  hosts: l2-windows
   gather_facts: false
-  vars:
-    feature_name: "{{ feature_name | default('TelnetClient') }}"
-    feature_state: "{{ feature_state | default('present') }}"
   tasks:
-    - name: "Ensure optional feature {{ feature_name }} is {{ feature_state }}"
+    - name: "Ensure optional feature {{ feature_name | default('TelnetClient') }} is {{ feature_state | default('present') }}"
       ansible.windows.win_optional_feature:
-        name: "{{ feature_name }}"
-        state: "{{ feature_state }}"
+        name: "{{ feature_name | default('TelnetClient') }}"
+        state: "{{ feature_state | default('present') }}"

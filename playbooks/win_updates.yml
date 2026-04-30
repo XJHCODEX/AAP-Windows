@@ -1,17 +1,16 @@
 ---
 - name: Install Windows updates
-  hosts: all
+  hosts: l2-windows
   gather_facts: true
   vars:
     category_names:
       - SecurityUpdates
       - CriticalUpdates
-    reboot_allowed: "{{ reboot_allowed | default(false) }}"
   tasks:
     - name: Search and install updates (set reboot_allowed for automatic reboot if needed)
       ansible.windows.win_updates:
         category_names: "{{ category_names }}"
-        reboot: "{{ reboot_allowed | bool }}"
+        reboot: "{{ reboot_allowed | default(false) | bool }}"
         state: installed
       register: update_result
 

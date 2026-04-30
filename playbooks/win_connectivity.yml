@@ -1,6 +1,6 @@
 ---
 - name: Windows connectivity (WinRM smoke test)
-  hosts: all
+  hosts: l2-windows
   gather_facts: false
   tasks:
     - name: Ping Windows host over WinRM
