@@ -26,12 +26,12 @@ Ansible playbooks for **Ansible Automation Platform** jobs targeting **Windows**
 | `playbooks/win_updates.yml` | dnf/yum update | **Mutating**, long-running |
 | `playbooks/win_reboot.yml` | reboot | **Disruptive** |
 
-Override paths with **`hosts:`** in each play if your inventory uses a dedicated group name (e.g. `windows` instead of `all`).
+Override **`hosts:`** in each play if your inventory uses a dedicated group name (e.g. `windows` instead of `all`).
 
 ## Extra variables (examples)
 
 - **`win_service.yml`**: `service_name` (e.g. `Spooler`), `service_state` (`started` / `stopped` / `restarted`).
-- **`win_optional_feature.yml`**: `feature_name`, `feature_state` (`present` / `absent`).
+- **`win_optional_feature.yml`**: `feature_name` (optional component name, e.g. `TelnetClient`), `feature_state` (`present` / `absent`).
 - **`win_updates.yml`**: `category_names` (list, default security/critical), `reboot_allowed` (bool).
 - **`win_reboot.yml`**: `pre_reboot_delay_sec`, `reboot_timeout_sec`.
 
