@@ -2,14 +2,12 @@
 - name: Inspect Windows Firewall rules (read-only)
   hosts: all
   gather_facts: false
-  vars:
-    firewall_rule_sample: "{{ firewall_rule_sample | default(15) }}"
   tasks:
     - name: Sample firewall rules
       ansible.windows.win_shell: |
         Get-NetFirewallRule |
-          Select-Object -First {{ firewall_rule_sample | int }} DisplayName, Enabled, Direction, Action |
-          Format-Table -AutoSize | Out-String -Width 4096
+        Select-Object -First {{ firewall_rule_sample | default(15) | int }} DisplayName, Enabled, Direction, Action |
+        Format-Table -AutoSize | Out-String -Width 4096
       register: fw_out
       changed_when: false
 
