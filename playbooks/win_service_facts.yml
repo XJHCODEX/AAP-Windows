@@ -1,0 +1,19 @@
+---
+- name: Windows service facts (read-only)
+  hosts: all
+  gather_facts: false
+  vars:
+    service_filter_name: "{{ service_filter_name | default('*') }}"
+  tasks:
+    - name: Service status matching filter
+      ansible.windows.win_shell: |
+        Get-Service -Name '{{ service_filter_name }}' -ErrorAction SilentlyContinue |
+          Select-Object Name, Status, StartType |
+          Sort-Object Name |
+          ConvertTo-Json -Compress
+      register: svc_json
+      changed_when: false
+
+    - name: Show services JSON
+      ansible.builtin.debug:
+        var: svc_json.stdout_lines

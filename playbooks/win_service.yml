@@ -1,0 +1,12 @@
+---
+- name: Manage a Windows service
+  hosts: all
+  gather_facts: false
+  vars:
+    service_name: "{{ service_name | default('Spooler') }}"
+    service_state: "{{ service_state | default('started') }}"
+  tasks:
+    - name: "Set service {{ service_name }} to {{ service_state }}"
+      ansible.windows.win_service:
+        name: "{{ service_name }}"
+        state: "{{ service_state }}"

@@ -1,0 +1,17 @@
+---
+- name: Installed packages inventory (read-only)
+  hosts: all
+  gather_facts: false
+  vars:
+    package_sample_limit: "{{ package_sample_limit | default(25) }}"
+  tasks:
+    - name: Sample installed packages (Windows Provider)
+      ansible.windows.win_shell: |
+        Get-Package | Select-Object -First {{ package_sample_limit | int }} Name, Version, ProviderName |
+          Format-Table -AutoSize | Out-String -Width 4096
+      register: pkg_out
+      changed_when: false
+
+    - name: Display package sample
+      ansible.builtin.debug:
+        msg: "{{ pkg_out.stdout }}"
