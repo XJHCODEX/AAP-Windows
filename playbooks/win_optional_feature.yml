@@ -3,10 +3,10 @@
   hosts: all
   gather_facts: false
   vars:
-    feature_name: "{{ feature_name | default('Telnet-Client') }}"
+    feature_name: "{{ feature_name | default('TelnetClient') }}"
     feature_state: "{{ feature_state | default('present') }}"
   tasks:
     - name: "Ensure optional feature {{ feature_name }} is {{ feature_state }}"
-      ansible.windows.win_feature:
+      ansible.windows.win_optional_feature:
         name: "{{ feature_name }}"
         state: "{{ feature_state }}"
