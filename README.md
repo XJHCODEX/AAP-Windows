@@ -4,8 +4,9 @@ Ansible playbooks for **Ansible Automation Platform** jobs targeting **Windows**
 
 ## Inventory and Controller usage
 
-- Point job templates at an inventory that contains your Windows host(s).
-- In labs we typically **limit** runs to the Windows group or host pattern used elsewhere (e.g. `l2-windows`). Set **`limit`** on the job template or at launch to match your environment.
+- Each playbook uses **`hosts: l2-windows`**. Your Controller inventory (or `inventory/l2-windows.ini` for CLI runs) must define that group.
+- Point job templates at an inventory that contains your Windows host(s) in **`l2-windows`**.
+- You may still set **`limit`** on the job template or at launch to narrow hosts within that group.
 - Attach a **Machine** credential with **WinRM** (HTTP/HTTPS) for the Windows host.
 - Ensure the execution environment includes the **`ansible.windows`** collection (see `requirements.yml`).
 
@@ -26,7 +27,7 @@ Ansible playbooks for **Ansible Automation Platform** jobs targeting **Windows**
 | `playbooks/win_updates.yml` | dnf/yum update | **Mutating**, long-running |
 | `playbooks/win_reboot.yml` | reboot | **Disruptive** |
 
-Override **`hosts:`** in each play if your inventory uses a dedicated group name (e.g. `windows` instead of `all`).
+To target a different group name, fork the repo or change **`hosts:`** in each play.
 
 ## Extra variables (examples)
 
