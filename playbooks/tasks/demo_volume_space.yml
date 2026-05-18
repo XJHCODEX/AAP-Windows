@@ -1,0 +1,23 @@
+---
+# Included from win_disk_facts.yml — expects demo_disk and demo_part vars.
+- name: Demo — volume free space
+  ansible.builtin.debug:
+    msg: "{{ _vol_line }}"
+  vars:
+    _part_drive: "{{ demo_part.drive_letter | default('', true) | string }}"
+    _vol_label: >-
+      {{ (_part_drive ~ ':') if (_part_drive | length > 0)
+         else (vol.label | default(vol.path, true) | default('Volume', true) | string) }}
+    _vol_size: "{{ vol.size | default(0, true) | int }}"
+    _vol_free: "{{ vol.size_remaining | default(0, true) | int }}"
+    _vol_used_pct: "{{ (((_vol_size | int) - (_vol_free | int)) * 100 / (_vol_size | int)) | round(1) if (_vol_size | int) > 0 else 0 }}"
+    _vol_fs: "{{ vol.type | default('n/a', true) }}"
+    _vol_line: >-
+      [Disk {{ demo_disk.number }} · {{ _vol_label }}] ({{ _vol_fs }})
+      Free {{ _vol_free | int | filesizeformat(true) }}
+      of {{ _vol_size | int | filesizeformat(true) }}
+      ({{ _vol_used_pct }}% used)
+  loop: "{{ demo_part.volumes | default([]) }}"
+  loop_control:
+    loop_var: vol
+    label: "{{ vol.label | default(demo_part.drive_letter, true) | default('volume', true) }}"
