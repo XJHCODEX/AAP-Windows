@@ -2,10 +2,84 @@
 - name: Windows disk and volume facts
   hosts: l2-windows
   gather_facts: true
-  tasks:
-    - name: Gather Windows disk facts
-      community.windows.win_disk_facts:
+  vars:
+    # Set to true at job launch (extra vars) to dump full ansible_facts.disks JSON
+    show_raw_disk_facts: false
 
-    - name: Disk layout summary
+  tasks:
+    - name: Gather Windows disk, partition, and volume facts
+      community.windows.win_disk_facts:
+        filter:
+          - physical_disk
+          - partitions
+          - volumes
+
+    - name: Demo — report header
+      ansible.builtin.debug:
+        msg:
+          - "============================================================"
+          - "  Windows Disk Facts — {{ inventory_hostname }}"
+          - "============================================================"
+          - "OS: {{ ansible_os_family | default('Windows') }} {{ ansible_distribution_version | default('') }} ({{ ansible_architecture | default('n/a') }})"
+          - "Physical disks: {{ ansible_facts.disks | default([]) | length }}"
+
+    - name: Demo — disk capacity and status
+      ansible.builtin.debug:
+        msg: "{{ _disk_line }}"
+      vars:
+        _disk_line: >-
+          [Disk {{ item.number }}] {{ item.friendly_name | default(item.model) | default('Unknown') }}
+          | Size: {{ item.size | default(0) | int | filesizeformat(true) }}
+          | Status: {{ item.operational_status | default('n/a') }}
+          | Style: {{ item.partition_style | default('n/a') }}
+          | Partitions: {{ item.partition_count | default(item.partitions | default([]) | length) }}{{
+            ' | ** SYSTEM DISK **' if (item.system_disk | default(false)) else ''
+          }}{{
+            ' | Bootable' if (item.bootable | default(false)) else ''
+          }}
+      loop: "{{ ansible_facts.disks | default([]) }}"
+      loop_control:
+        label: "{{ item.friendly_name | default('disk-' ~ item.number) }}"
+
+    - name: Demo — partition layout
+      ansible.builtin.debug:
+        msg: "{{ _part_line }}"
+      vars:
+        _part_line: >-
+          [Disk {{ item.0.number }} · Partition {{ item.1.partition_number | default('?') }}]
+          Size: {{ item.1.size | default(0) | int | filesizeformat(true) }}{{
+            (' | Drive ' ~ item.1.drive_letter ~ ':') if (item.1.drive_letter | default('') | length > 0) else ''
+          }}{{
+            (' | Active') if (item.1.active | default(false)) else ''
+          }}
+      loop: "{{ ansible_facts.disks | default([]) | subelements('partitions', skip_missing=True) }}"
+      loop_control:
+        label: "disk-{{ item.0.number }}-p{{ item.1.partition_number | default('?') }}"
+
+    - name: Demo — volume free space
+      ansible.builtin.debug:
+        msg: "{{ _vol_line }}"
+      vars:
+        _vol_size: "{{ item.1.size | default(0) | int }}"
+        _vol_free: "{{ item.1.size_remaining | default(0) | int }}"
+        _vol_used_pct: "{{ (((_vol_size | int) - (_vol_free | int)) * 100 / (_vol_size | int)) | round(1) if (_vol_size | int) > 0 else 0 }}"
+        _vol_line: >-
+          [{{ item.1.drive_letter | default(item.1.path | default('Volume')) }}]
+          Free {{ _vol_free | int | filesizeformat(true) }}
+          of {{ _vol_size | int | filesizeformat(true) }}
+          ({{ _vol_used_pct }}% used)
+      loop: "{{ ansible_facts.disks | default([]) | subelements('volumes', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.1.drive_letter | default('volume') }}"
+
+    - name: Demo — report footer
+      ansible.builtin.debug:
+        msg:
+          - "============================================================"
+          - "  End of disk facts — {{ inventory_hostname }}"
+          - "============================================================"
+
+    - name: Disk layout summary (raw facts, optional)
       ansible.builtin.debug:
         var: ansible_facts.disks
+      when: show_raw_disk_facts | bool
