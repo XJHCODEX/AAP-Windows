@@ -8,7 +8,7 @@ Ansible playbooks for **Ansible Automation Platform** jobs targeting **Windows**
 - Point job templates at an inventory that contains your Windows host(s) in **`l2-windows`**.
 - You may still set **`limit`** on the job template or at launch to narrow hosts within that group.
 - Attach a **Machine** credential with **WinRM** (HTTP/HTTPS) for the Windows host.
-- Ensure the execution environment includes the **`ansible.windows`** collection (see `requirements.yml`).
+- Ensure the execution environment includes **`ansible.windows`** and **`community.windows`** (see `collections/requirements.yml`). On the SCM **Project**, set **Collections Requirements File** to `collections/requirements.yml` if you use project-based collection install.
 
 ## Playbook index
 
