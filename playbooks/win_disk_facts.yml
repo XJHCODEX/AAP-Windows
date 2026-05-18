@@ -45,34 +45,42 @@
       ansible.builtin.debug:
         msg: "{{ _part_line }}"
       vars:
+        _part_num: "{{ item.1.number | default(loop.index, true) }}"
         _part_drive: "{{ item.1.drive_letter | default('', true) | string }}"
         _part_line: >-
-          [Disk {{ item.0.number }} · Partition {{ item.1.partition_number | default('?', true) }}]
-          Size: {{ item.1.size | default(0, true) | int | filesizeformat(true) }}{{
+          [Disk {{ item.0.number }} · Partition {{ _part_num }}]
+          Size: {{ item.1.size | default(0, true) | int | filesizeformat(true) }}
+          | Type: {{ item.1.type | default('n/a', true) }}{{
             (' | Drive ' ~ _part_drive ~ ':') if (_part_drive | length > 0) else ''
           }}{{
             ' | Active' if (item.1.active | default(false)) else ''
+          }}{{
+            (' | Label: ' ~ item.1.volumes[0].label) if (item.1.volumes | default([], true) | length > 0 and (item.1.volumes[0].label | default('', true) | length > 0)) else ''
           }}
       loop: "{{ ansible_facts.disks | default([]) | subelements('partitions', skip_missing=True) }}"
       loop_control:
-        label: "disk-{{ item.0.number }}-p{{ item.1.partition_number | default('?', true) }}"
+        label: "disk-{{ item.0.number }}-p{{ item.1.number | default(loop.index) }}"
 
     - name: Demo — volume free space
       ansible.builtin.debug:
         msg: "{{ _vol_line }}"
       vars:
-        _vol_label: "{{ item.1.drive_letter | default(item.1.path, true) | default('Volume', true) | string }}"
-        _vol_size: "{{ item.1.size | default(0, true) | int }}"
-        _vol_free: "{{ item.1.size_remaining | default(0, true) | int }}"
+        _vol_drive: "{{ item.1.drive_letter | default('', true) | string }}"
+        _vol_label: >-
+          {{ (_vol_drive ~ ':') if (_vol_drive | length > 0)
+             else (item.2.label | default(item.2.path, true) | default('Volume', true) | string) }}
+        _vol_size: "{{ item.2.size | default(0, true) | int }}"
+        _vol_free: "{{ item.2.size_remaining | default(0, true) | int }}"
         _vol_used_pct: "{{ (((_vol_size | int) - (_vol_free | int)) * 100 / (_vol_size | int)) | round(1) if (_vol_size | int) > 0 else 0 }}"
+        _vol_fs: "{{ item.2.type | default('n/a', true) }}"
         _vol_line: >-
-          [{{ _vol_label }}]
+          [{{ _vol_label }}] ({{ _vol_fs }})
           Free {{ _vol_free | int | filesizeformat(true) }}
           of {{ _vol_size | int | filesizeformat(true) }}
           ({{ _vol_used_pct }}% used)
-      loop: "{{ ansible_facts.disks | default([]) | subelements('volumes', skip_missing=True) }}"
+      loop: "{{ ansible_facts.disks | default([]) | subelements(['partitions', 'volumes'], skip_missing=True) }}"
       loop_control:
-        label: "{{ item.1.drive_letter | default('volume', true) }}"
+        label: "{{ item.1.drive_letter | default(item.2.label, true) | default('volume', true) }}"
 
     - name: Demo — report footer
       ansible.builtin.debug:
