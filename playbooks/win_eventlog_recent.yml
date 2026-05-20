@@ -5,12 +5,22 @@
   tasks:
     - name: Recent events
       ansible.windows.win_shell: |
-        Get-WinEvent -LogName '{{ event_log_name | default("System") }}' -MaxEvents {{ event_max_events | default(10) | int }} |
-        Select-Object TimeCreated, Id, LevelDisplayName, Message |
-        Format-List | Out-String -Width 4096
+        @(
+          Get-WinEvent -LogName '{{ event_log_name | default("System") }}' -MaxEvents {{ event_max_events | default(10) | int }} |
+            Select-Object @{
+              Name = 'Time'
+              Expression = { $_.TimeCreated.ToString('u') }
+            }, Id, LevelDisplayName, @{
+              Name = 'Message'
+              Expression = { ($_.Message -replace '\s+', ' ').Trim() }
+            }
+        ) | ConvertTo-Json -Depth 4 -Compress
       register: ev_out
       changed_when: false
 
     - name: Display events
       ansible.builtin.debug:
-        msg: "{{ ev_out.stdout }}"
+        msg: "{{ item.Time }} | Id {{ item.Id }} ({{ item.LevelDisplayName }}): {{ item.Message }}"
+      loop: "{{ (ev_out.stdout | from_json) | list }}"
+      loop_control:
+        label: "{{ item.Id }}"
