@@ -5,12 +5,18 @@
   tasks:
     - name: Sample firewall rules
       ansible.windows.win_shell: |
-        Get-NetFirewallRule |
-        Select-Object -First {{ firewall_rule_sample | default(15) | int }} DisplayName, Enabled, Direction, Action |
-        Format-Table -AutoSize | Out-String -Width 4096
+        @(
+          Get-NetFirewallRule |
+            Select-Object -First {{ firewall_rule_sample | default(15) | int }} DisplayName, Enabled, Direction, Action
+        ) | ConvertTo-Json -Depth 4 -Compress
       register: fw_out
       changed_when: false
 
     - name: Display firewall sample
       ansible.builtin.debug:
-        msg: "{{ fw_out.stdout }}"
+        msg: "{{ item.DisplayName }} | Enabled={{ item.Enabled }} | {{ item.Direction }} | {{ item.Action }}"
+      vars:
+        _rules: "{{ fw_out.stdout | from_json }}"
+      loop: "{{ _rules if _rules is sequence else [_rules] }}"
+      loop_control:
+        label: "{{ item.DisplayName }}"
