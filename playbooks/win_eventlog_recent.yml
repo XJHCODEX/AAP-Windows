@@ -21,6 +21,8 @@
     - name: Display events
       ansible.builtin.debug:
         msg: "{{ item.Time }} | Id {{ item.Id }} ({{ item.LevelDisplayName }}): {{ item.Message }}"
-      loop: "{{ (ev_out.stdout | from_json) | list }}"
+      vars:
+        _events: "{{ ev_out.stdout | from_json }}"
+      loop: "{{ _events if _events is sequence else [_events] }}"
       loop_control:
         label: "{{ item.Id }}"
