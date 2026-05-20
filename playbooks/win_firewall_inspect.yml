@@ -7,16 +7,55 @@
       ansible.windows.win_shell: |
         @(
           Get-NetFirewallRule |
-            Select-Object -First {{ firewall_rule_sample | default(15) | int }} DisplayName, Enabled, Direction, Action
+            Select-Object -First {{ firewall_rule_sample | default(15) | int }} @{
+              Name = 'RuleName'
+              Expression = { $_.DisplayName }
+            }, @{
+              Name = 'StatusLabel'
+              Expression = { if ([bool]$_.Enabled) { 'ENABLED' } else { 'DISABLED' } }
+            }, @{
+              Name = 'StatusDetail'
+              Expression = {
+                if ([bool]$_.Enabled) {
+                  'This rule is ON and is actively filtering traffic on the firewall.'
+                } else {
+                  'This rule is OFF (present in policy but not enforcing anything right now).'
+                }
+              }
+            }, @{
+              Name = 'Traffic'
+              Expression = {
+                $direction = @{
+                  Inbound  = 'incoming (toward this computer)'
+                  Outbound = 'outgoing (from this computer)'
+                }[$_.Direction.ToString()]
+                if (-not $direction) { $direction = $_.Direction.ToString().ToLower() }
+
+                $effect = @{
+                  Allow = 'ALLOW (permit)'
+                  Block = 'BLOCK (deny)'
+                }[$_.Action.ToString()]
+                if (-not $effect) { $effect = $_.Action.ToString().ToUpper() }
+
+                if ([bool]$_.Enabled) {
+                  "Traffic: {0} — action is to {1}." -f $direction, $effect
+                } else {
+                  "If turned ON, would {0} {1}." -f ($_.Action.ToString().ToUpper()), $direction
+                }
+              }
+            }
         ) | ConvertTo-Json -Depth 4 -Compress
       register: fw_out
       changed_when: false
 
     - name: Display firewall sample
       ansible.builtin.debug:
-        msg: "{{ item.DisplayName }} | Enabled={{ item.Enabled }} | {{ item.Direction }} | {{ item.Action }}"
+        msg:
+          - "[{{ item.StatusLabel }}] {{ item.RuleName }}"
+          - "  {{ item.StatusDetail }}"
+          - "  {{ item.Traffic }}"
       vars:
         _rules: "{{ fw_out.stdout | from_json }}"
       loop: "{{ _rules if _rules is sequence else [_rules] }}"
       loop_control:
-        label: "{{ item.DisplayName }}"
+        label: "[{{ item.StatusLabel }}] {{ item.RuleName }}"
